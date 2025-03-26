@@ -91,15 +91,6 @@ export default {
                 await BorrowService.delete(this.borrowLocal._id);
                 console.log("✅ Xóa đơn mượn thành công!");
                 this.$emit("borrow:deleted", this.borrowLocal._id);
-
-                // Reset form sau khi xóa
-                this.borrowLocal = {
-                    _id: null,
-                    MaDocGia: "",
-                    MaSach: "",
-                    NgayMuon: new Date().toISOString().split("T")[0],
-                    NgayTra: "",
-                };
             } catch (error) {
                 console.error("❌ Lỗi khi xóa đơn mượn:", error.response?.data || error);
                 alert("Xóa đơn mượn thất bại! Vui lòng thử lại.");

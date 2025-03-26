@@ -16,7 +16,7 @@ export default {
         publishers: { type: Array, default: [] },
         activeIndex: { type: Number, default: -1 },
     },
-    emits: ["update:activeIndex"],
+    emits: ["update:activeIndex", "updatePublisher"],
     methods: {
         updateActiveIndex(index) {
             this.$emit("update:activeIndex", index);

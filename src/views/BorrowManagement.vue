@@ -7,13 +7,16 @@
 
         <div class="row">
             <div class="col-md-4">
-                <BorrowList :borrows="borrows" @selectBorrow="selectBorrow" />
+                <BorrowList :borrows="borrows" v-model:activeIndex="activeIndex" />
             </div>
-            <div class="col-md-4">
-                <BorrowCard v-if="selectedBorrow" :borrow="selectedBorrow" @deleteBorrow="deleteBorrow" />
-            </div>
-            <div class="col-md-4">
-                <BorrowForm v-if="showForm || selectedBorrow" :borrow="selectedBorrow || {}" @saveBorrow="saveBorrow" />
+            <div class="col-md-8">
+                <BorrowCard v-if="activeBorrow" :borrow="activeBorrow" />
+                <BorrowForm 
+                    v-if="activeBorrow || isAdding" 
+                    :borrow="activeBorrow || newBorrow" 
+                    @submit:borrow="saveBorrow" 
+                    @delete:borrow="deleteBorrow" 
+                />
             </div>
         </div>
     </div>
@@ -34,9 +37,21 @@ export default {
     data() {
         return {
             borrows: [],
-            selectedBorrow: null,
-            showForm: false,
+            activeIndex: -1,
+            isAdding: false,
+            newBorrow: {
+                userId: "",
+                bookId: "",
+                borrowDate: "",
+                returnDate: "",
+                status: "",
+            },
         };
+    },
+    computed: {
+        activeBorrow() {
+            return this.activeIndex !== -1 ? this.borrows[this.activeIndex] : null;
+        },
     },
     async created() {
         await this.fetchBorrows();
@@ -49,13 +64,9 @@ export default {
                 console.error("Lỗi khi lấy danh sách đơn mượn:", error);
             }
         },
-        selectBorrow(borrow) {
-            this.selectedBorrow = borrow;
-            this.showForm = false;
-        },
         addNewBorrow() {
-            this.selectedBorrow = null;
-            this.showForm = true;
+            this.isAdding = true;
+            this.activeIndex = -1;
         },
         async saveBorrow(borrowData) {
             try {
@@ -64,8 +75,8 @@ export default {
                 } else {
                     await BorrowService.create(borrowData);
                 }
+                this.isAdding = false;
                 await this.fetchBorrows();
-                this.showForm = false;
             } catch (error) {
                 console.error("Lỗi khi lưu đơn mượn:", error);
             }
@@ -74,11 +85,12 @@ export default {
             try {
                 await BorrowService.delete(borrowId);
                 await this.fetchBorrows();
-                this.selectedBorrow = null;
+                this.activeIndex = -1;
+                this.isAdding = false;
             } catch (error) {
                 console.error("Lỗi khi xóa đơn mượn:", error);
             }
-        }
-    }
+        },
+    },
 };
 </script>

@@ -1,10 +1,10 @@
 <template>
     <div class="container">
-        <h2>Quản lý nhà xuất bản</h2>
+        <h2>Quản lý Nhà Xuất Bản</h2>
 
         <!-- Nút Thêm Nhà Xuất Bản -->
         <div class="mb-3">
-            <button class="btn btn-success" @click="addPublisher">Thêm nhà xuất bản</button>
+            <button class="btn btn-success" @click="addPublisher">Thêm Nhà Xuất Bản</button>
         </div>
 
         <div class="row">
@@ -12,7 +12,10 @@
                 <PublisherList :publishers="publishers" v-model:activeIndex="activeIndex" />
             </div>
             <div class="col-md-8">
-                <PublisherCard v-if="activePublisher" :publisher="activePublisher" />
+                <PublisherCard v-if="activePublisher && activePublisher.MaNXB" 
+                    :publisher="activePublisher" 
+                    @deletePublisher="deletePublisher"
+                />
                 <PublisherForm 
                     v-if="activePublisher || isAdding"
                     :publisher="activePublisher || newPublisher"
@@ -40,9 +43,9 @@ export default {
         return {
             publishers: [],
             activeIndex: -1,
-            isAdding: false, // Kiểm tra trạng thái thêm mới
+            isAdding: false,
             newPublisher: {
-                MaNXB: "", // Mã nhà xuất bản
+                MaNXB: "", // Đảm bảo có MaNXB
                 TenNXB: "",
                 DiaChi: "",
                 Email: "",
@@ -61,38 +64,53 @@ export default {
     methods: {
         async fetchPublishers() {
             try {
-                this.publishers = await PublisherService.getAll();
+                const publishersFromApi = await PublisherService.getAll();
+                this.publishers = publishersFromApi.map(publisher => ({
+                    ...publisher,
+                    MaNXB: publisher.MaNXB || publisher._id, // Đảm bảo MaNXB luôn có giá trị
+                }));
+                console.log("📌 Danh sách nhà xuất bản đã tải:", this.publishers);
             } catch (error) {
-                console.error("Lỗi khi lấy danh sách nhà xuất bản:", error);
+                console.error("❌ Lỗi khi tải danh sách nhà xuất bản:", error);
             }
         },
         addPublisher() {
             this.isAdding = true;
-            this.activeIndex = -1; // Không chọn nhà xuất bản nào cả
+            this.activeIndex = -1;
         },
-        async savePublisher(publisher) {
+        async savePublisher(publisherData) {
+            console.log("📌 Đang lưu nhà xuất bản với _id:", publisherData._id);  // Kiểm tra _id
             try {
-                if (publisher.MaNXB) {
-                    await PublisherService.update(publisher.MaNXB, publisher);
+                if (publisherData._id) {
+                    // Gọi API với _id là định danh duy nhất
+                    await PublisherService.update(publisherData._id, publisherData);
                 } else {
-                    await PublisherService.create(publisher);
+                    // Gọi API tạo mới nhà xuất bản
+                    await PublisherService.create(publisherData);
                 }
                 this.isAdding = false;
-                await this.fetchPublishers();
+                await this.fetchPublishers(); // Tải lại danh sách nhà xuất bản sau khi lưu
             } catch (error) {
-                console.error("Lỗi khi lưu nhà xuất bản:", error);
+                console.error("❌ Lỗi khi lưu nhà xuất bản:", error);
             }
         },
+
         async deletePublisher(publisherId) {
+            console.log("📌 Đang xóa nhà xuất bản với ID:", publisherId); // Ghi log ID
             try {
-                await PublisherService.delete(publisherId);
-                await this.fetchPublishers();
+                if (!publisherId) {
+                    console.error("❌ Lỗi: ID nhà xuất bản cần xóa không hợp lệ!");
+                    return;
+                }
+                await PublisherService.delete(publisherId); // Gọi API với publisherId là _id
+                this.publishers = this.publishers.filter(publisher => publisher._id !== publisherId); // Loại bỏ nhà xuất bản sau khi xóa
+                console.log("🗑️ Nhà xuất bản đã bị xóa!");
                 this.activeIndex = -1;
                 this.isAdding = false;
             } catch (error) {
-                console.error("Lỗi khi xóa nhà xuất bản:", error);
+                console.error("❌ Lỗi khi xóa nhà xuất bản:", error);
             }
-        },
+        }
     },
 };
 </script>

@@ -26,6 +26,7 @@ class PublisherService {
     }
 
     async delete(id) {
+        console.log("📌 Đang xóa nhà xuất bản với ID:", id); // Debugging ID
         return (await this.api.delete(`/${id}`)).data;
     }
 

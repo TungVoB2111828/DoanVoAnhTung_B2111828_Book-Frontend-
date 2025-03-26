@@ -1,23 +1,22 @@
 <template>
-    <div class="container">
-        <h2>Quản lý độc giả</h2>
-
-        <!-- Nút Thêm Độc Giả -->
-        <div class="mb-3">
-            <button class="btn btn-success" @click="addUser">Thêm độc giả</button>
-        </div>
-
+    <div class="container mt-4">
+        <h2>Quản lý Người Dùng</h2>
+        <button class="btn btn-primary mb-3" @click="addNewUser">Thêm Người Dùng Mới</button>
         <div class="row">
             <div class="col-md-4">
                 <UserList :users="users" v-model:activeIndex="activeIndex" />
             </div>
             <div class="col-md-8">
-                <UserCard v-if="activeUser" :user="activeUser" />
-                <UserForm
-                    v-if="activeUser || isAdding"
-                    :user="activeUser || newUser"
-                    @submit:user="saveUser"
-                    @delete:user="deleteUser"
+                <UserCard 
+                    v-if="activeUser && activeUser._id" 
+                    :user="activeUser" 
+                    @deleteUser="deleteUser" 
+                />
+                <UserForm 
+                    v-if="activeUser || isAdding" 
+                    :user="activeUser || newUser" 
+                    @submit:user="saveUser" 
+                    @delete:user="deleteUser"  
                 />
             </div>
         </div>
@@ -28,7 +27,7 @@
 import UserList from "@/components/UserList.vue";
 import UserCard from "@/components/UserCard.vue";
 import UserForm from "@/components/UserForm.vue";
-import UserService from "@/services/user.service.js";
+import UserService from "@/services/user.service";
 
 export default {
     components: {
@@ -40,15 +39,11 @@ export default {
         return {
             users: [],
             activeIndex: -1,
-            isAdding: false, // Kiểm tra trạng thái thêm mới
+            isAdding: false,
             newUser: {
-                MaDocGia: "", // Mã độc giả (sẽ được backend cấp nếu cần)
-                HoLot: "",
-                Ten: "",
-                NgaySinh: "",
-                Phai: "Nam",
-                DiaChi: "",
-                DienThoai: "",
+                _id: "", // Sử dụng _id thay vì MaDocGia
+                TenDocGia: "",
+                // Các thông tin người dùng khác
             },
         };
     },
@@ -63,36 +58,45 @@ export default {
     methods: {
         async fetchUsers() {
             try {
-                this.users = await UserService.getAll();
+                const usersFromApi = await UserService.getAll();
+                this.users = usersFromApi.map(user => ({
+                    ...user,
+                    _id: user._id || user.MaDocGia, // Đảm bảo luôn có _id
+                }));
+                console.log("📌 Danh sách người dùng đã tải:", this.users);
             } catch (error) {
-                console.error("Lỗi khi lấy danh sách độc giả:", error);
+                console.error("❌ Lỗi khi tải danh sách người dùng:", error);
             }
         },
-        addUser() {
+        addNewUser() {
             this.isAdding = true;
-            this.activeIndex = -1; // Không chọn độc giả nào cả
+            this.activeIndex = -1;
         },
-        async saveUser(user) {
+        async saveUser(userData) {
             try {
-                if (user.MaDocGia) {
-                    await UserService.update(user.MaDocGia, user);
+                if (userData._id) {
+                    await UserService.update(userData._id, userData); // Dùng _id khi cập nhật
                 } else {
-                    await UserService.create(user);
+                    await UserService.create(userData);
                 }
                 this.isAdding = false;
                 await this.fetchUsers();
             } catch (error) {
-                console.error("Lỗi khi lưu độc giả:", error);
+                console.error("❌ Lỗi khi lưu người dùng:", error);
             }
         },
         async deleteUser(userId) {
             try {
-                await UserService.delete(userId);
+                if (!userId) {
+                    console.error("❌ Lỗi: ID người dùng cần xóa không hợp lệ!");
+                    return;
+                }
+                await UserService.delete(userId); // Dùng _id khi xóa
                 await this.fetchUsers();
                 this.activeIndex = -1;
                 this.isAdding = false;
             } catch (error) {
-                console.error("Lỗi khi xóa độc giả:", error);
+                console.error("❌ Lỗi khi xóa người dùng:", error);
             }
         },
     },

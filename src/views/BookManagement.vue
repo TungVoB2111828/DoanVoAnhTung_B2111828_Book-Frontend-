@@ -1,3 +1,24 @@
+<template>
+    <div class="container mt-4">
+        <h2>Quản lý Sách</h2>
+        <button class="btn btn-primary mb-3" @click="addNewBook">Thêm Sách Mới</button>
+        <div class="row">
+            <div class="col-md-4">
+                <BookList :books="books" v-model:activeIndex="activeIndex" />
+            </div>
+            <div class="col-md-8">
+                <BookCard v-if="activeBook && activeBook.MaSach" :book="activeBook" @deleteBook="deleteBook" />
+                <BookForm 
+                    v-if="activeBook || isAdding" 
+                    :book="activeBook || newBook" 
+                    @submit:book="saveBook" 
+                    @delete:book="deleteBook" 
+                />
+            </div>
+        </div>
+    </div>
+</template>
+
 <script>
 import BookList from "@/components/BookList.vue";
 import BookCard from "@/components/BookCard.vue";
@@ -13,9 +34,23 @@ export default {
     data() {
         return {
             books: [],
-            selectedBook: null,
-            showForm: false,
+            activeIndex: -1,
+            isAdding: false,
+            newBook: {
+                MaSach: "", // Đảm bảo có MaSach trong newBook
+                TenSach: "",
+                DonGia: 0,
+                SoQuyen: 0,
+                NamXuatBan: "",
+                MaNXB: "",
+                NguonGocTacGia: "",
+            },
         };
+    },
+    computed: {
+        activeBook() {
+            return this.activeIndex !== -1 ? this.books[this.activeIndex] : null;
+        },
     },
     async created() {
         await this.fetchBooks();
@@ -23,59 +58,47 @@ export default {
     methods: {
         async fetchBooks() {
             try {
-                this.books = await BookService.getAll();
+                const booksFromApi = await BookService.getAll();
+                this.books = booksFromApi.map(book => ({
+                    ...book,
+                    MaSach: book.MaSach || book._id, // Đảm bảo luôn có MaSach
+                }));
+                console.log("📌 Danh sách sách đã tải:", this.books);
             } catch (error) {
-                console.error("Error fetching books:", error);
+                console.error("❌ Lỗi khi tải danh sách sách:", error);
             }
         },
-        selectBook(book) {
-            this.selectedBook = book;
-            this.showForm = false;
-        },
         addNewBook() {
-            this.selectedBook = null;
-            this.showForm = true;
+            this.isAdding = true;
+            this.activeIndex = -1;
         },
         async saveBook(bookData) {
             try {
-                if (bookData._id) {
-                    await BookService.update(bookData._id, bookData);
+                if (bookData.MaSach) {
+                    await BookService.update(bookData.MaSach, bookData);
                 } else {
                     await BookService.create(bookData);
                 }
+                this.isAdding = false;
                 await this.fetchBooks();
-                this.showForm = false;
             } catch (error) {
-                console.error("Error saving book:", error);
+                console.error("❌ Lỗi khi lưu sách:", error);
             }
         },
         async deleteBook(bookId) {
             try {
+                if (!bookId) {
+                    console.error("❌ Lỗi: ID sách cần xóa không hợp lệ!");
+                    return;
+                }
                 await BookService.delete(bookId);
                 await this.fetchBooks();
-                this.selectedBook = null;
+                this.activeIndex = -1;
+                this.isAdding = false;
             } catch (error) {
-                console.error("Error deleting book:", error);
+                console.error("❌ Lỗi khi xóa sách:", error);
             }
-        }
-    }
+        },
+    },
 };
 </script>
-
-<template>
-    <div class="container mt-4">
-        <h2>Quản lý Sách</h2>
-        <button class="btn btn-primary mb-3" @click="addNewBook">Thêm Sách Mới</button>
-        <div class="row">
-            <div class="col-md-4">
-                <BookList :books="books" @selectBook="selectBook" />
-            </div>
-            <div class="col-md-4">
-                <BookCard v-if="selectedBook" :book="selectedBook" @deleteBook="deleteBook" />
-            </div>
-            <div class="col-md-4">
-                <BookForm v-if="showForm || selectedBook" :book="selectedBook || {}" @saveBook="saveBook" />
-            </div>
-        </div>
-    </div>
-</template>

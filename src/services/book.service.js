@@ -26,6 +26,7 @@ class BookService {
     }
 
     async delete(id) {
+        console.log("🔍 Deleting book API call with ID:", id);
         return (await this.api.delete(`/${id}`)).data;
     }
 

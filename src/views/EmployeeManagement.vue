@@ -12,7 +12,11 @@
                 <EmployeeList :employees="employees" v-model:activeIndex="activeIndex" />
             </div>
             <div class="col-md-8">
-                <EmployeeCard v-if="activeEmployee" :employee="activeEmployee" />
+                <EmployeeCard 
+                    v-if="activeEmployee && activeEmployee._id" 
+                    :employee="activeEmployee" 
+                    @deleteEmployee="deleteEmployee" 
+                />
                 <EmployeeForm 
                     v-if="activeEmployee || isAdding" 
                     :employee="activeEmployee || newEmployee"
@@ -42,8 +46,8 @@ export default {
             activeIndex: -1,
             isAdding: false,
             newEmployee: {
-                MSNV: "", // Mã số nhân viên
-                HoTen: "",
+                _id: "", // Sử dụng _id thay vì MSNV
+                HoTenNV: "",
                 ChucVu: "",
                 Email: "",
                 SoDienThoai: "",
@@ -61,7 +65,12 @@ export default {
     methods: {
         async fetchEmployees() {
             try {
-                this.employees = await EmployeeService.getAll();
+                const employeesFromApi = await EmployeeService.getAll();
+                this.employees = employeesFromApi.map(employee => ({
+                    ...employee,
+                    _id: employee._id || employee.MSNV, // Đảm bảo luôn có _id
+                }));
+                console.log("📌 Danh sách nhân viên đã tải:", this.employees);
             } catch (error) {
                 console.error("Lỗi khi lấy danh sách nhân viên:", error);
             }
@@ -72,8 +81,8 @@ export default {
         },
         async saveEmployee(employee) {
             try {
-                if (employee.MSNV) {
-                    await EmployeeService.update(employee.MSNV, employee);
+                if (employee._id) {
+                    await EmployeeService.update(employee._id, employee); // Dùng _id khi cập nhật
                 } else {
                     await EmployeeService.create(employee);
                 }
@@ -85,7 +94,11 @@ export default {
         },
         async deleteEmployee(employeeId) {
             try {
-                await EmployeeService.delete(employeeId);
+                if (!employeeId) {
+                    console.error("❌ Lỗi: ID nhân viên cần xóa không hợp lệ!");
+                    return;
+                }
+                await EmployeeService.delete(employeeId); // Dùng _id khi xóa
                 await this.fetchEmployees();
                 this.activeIndex = -1;
                 this.isAdding = false;

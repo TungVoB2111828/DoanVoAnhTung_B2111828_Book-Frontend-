@@ -33,7 +33,7 @@
 
             <div class="form-group">
                 <label for="NguonGocTacGia">Tác giả / Nguồn gốc</label>
-                <Field name="NguonGocTacGia" type="text" class="form-control" v-model="bookLocal.NguonGocTacGia" />
+                <Field name="NguonGocTacGia" type="text" class="form-control" v-model="bookLocal.TacGia" />
                 <ErrorMessage name="NguonGocTacGia" class="error-feedback" />
             </div>
 
