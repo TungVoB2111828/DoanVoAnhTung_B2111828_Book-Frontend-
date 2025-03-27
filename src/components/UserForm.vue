@@ -3,7 +3,7 @@
         <form @submit.prevent="handleSubmit(submitUser)">
             <div class="form-group">
                 <label for="TenDocGia">Tên người dùng</label>
-                <Field name="TenDocGia" type="text" class="form-control" v-model="userLocal.TenDocGia" />
+                <Field name="TenDocGia" type="text" class="form-control" v-model="userLocal.Ten" />
                 <ErrorMessage name="TenDocGia" class="error-feedback" />
             </div>
 
@@ -82,9 +82,9 @@ export default {
             try {
                 if (!this.userLocal.MaDocGia) return;
 
-                await UserService.delete(this.userLocal.MaDocGia);
+                await UserService.delete(this.userLocal._id);
                 console.log("User deleted successfully!");
-                this.$emit("user:deleted", this.userLocal.MaDocGia); // Emit sự kiện user:deleted
+                this.$emit("user:deleted", this.userLocal._id); // Emit sự kiện user:deleted
             } catch (error) {
                 console.error("Error deleting user:", error);
                 alert("Xóa người dùng thất bại! Vui lòng thử lại.");

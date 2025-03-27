@@ -85,9 +85,9 @@ export default {
             try {
                 if (!this.publisherLocal.MaNXB) return;
 
-                await PublisherService.delete(this.publisherLocal.MaNXB);
+                await PublisherService.delete(this.publisherLocal._id);
                 console.log("🗑️ Nhà xuất bản đã bị xóa!");
-                this.$emit("publisher:deleted", this.publisherLocal.MaNXB);
+                this.$emit("publisher:deleted", this.publisherLocal._id);
             } catch (error) {
                 console.error("❌ Lỗi khi xóa nhà xuất bản:", error.response?.data || error);
                 alert("Xóa nhà xuất bản thất bại! Vui lòng thử lại.");
